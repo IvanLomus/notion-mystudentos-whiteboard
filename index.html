@@ -15,6 +15,7 @@
             --accent: #4ea7fc;
             --shadow: 0 10px 40px rgba(0,0,0,0.2);
             --danger: #ff4d4d;
+            --modal-overlay: rgba(255,255,255, 0.8);
         }
 
         [data-theme="dark"] {
@@ -27,6 +28,7 @@
             --accent: #2383e2;
             --shadow: 0 10px 40px rgba(0,0,0,0.6);
             --danger: #eb5757;
+            --modal-overlay: rgba(0,0,0, 0.7);
         }
 
         body {
@@ -57,7 +59,6 @@
             height: 100%;
         }
 
-        /* --- TOOLBAR --- */
         .toolbar-wrapper {
             position: absolute;
             bottom: 25px;
@@ -164,6 +165,68 @@
             .save-btn { padding: 6px 10px; font-size: 12px; }
         }
 
+        #modalOverlay {
+            display: none;
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--modal-overlay);
+            backdrop-filter: blur(5px);
+            z-index: 500;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .modal-box {
+            background: var(--menu-bg);
+            color: var(--menu-text);
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--menu-border);
+            text-align: center;
+            min-width: 200px;
+            transform: scale(0.9);
+            animation: popIn 0.2s ease forwards;
+        }
+
+        .modal-title {
+            font-weight: 700;
+            font-size: 18px;
+            margin-bottom: 8px;
+        }
+        .modal-desc {
+            opacity: 0.7;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+        .modal-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .modal-btn {
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .cancel-btn {
+            background: var(--menu-hover);
+            color: var(--menu-text);
+        }
+        .confirm-btn {
+            background: var(--danger);
+            color: white;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes popIn { from { transform: scale(0.9); } to { transform: scale(1); } }
+
+
         #resultContainer {
             display: none;
             position: absolute;
@@ -246,6 +309,17 @@
     <canvas id="drawingCanvas"></canvas>
 </div>
 
+<div id="modalOverlay">
+    <div class="modal-box">
+        <div class="modal-title">Clear Canvas?</div>
+        <div class="modal-desc">This cannot be undone.</div>
+        <div class="modal-buttons">
+            <button class="modal-btn cancel-btn" onclick="closeModal()">Cancel</button>
+            <button class="modal-btn confirm-btn" onclick="performClear()">Clear</button>
+        </div>
+    </div>
+</div>
+
 <div class="toolbar-wrapper" id="mainToolbar">
     <div class="toolbar">
         
@@ -256,7 +330,7 @@
             <button class="icon-btn" id="tool-eraser" onclick="setTool('eraser')" title="Eraser">
                 <svg viewBox="0 0 24 24"><path d="M16.24 3.56l4.95 4.94c.78.79.78 2.05 0 2.84L12 20.53a4.008 4.008 0 0 1-5.66 0L2.81 17c-.78-.79-.78-2.05 0-2.84l10.6-10.6c.79-.78 2.05-.78 2.83 0zM4.22 15.58l3.54 3.53c.78.79 2.04.79 2.83 0l8.48-8.48-3.53-3.54-8.49 8.48a2.003 2.003 0 0 0-.01 2.84a1.996 1.996 0 0 0 1.18-.83z"/></svg>
             </button>
-            <button class="icon-btn danger" onclick="clearCanvas()" title="Clear All">
+            <button class="icon-btn danger" onclick="requestClear()" title="Clear All">
                 <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
             </button>
             
@@ -284,7 +358,7 @@
 </div>
 
 <div id="resultContainer">
-    <div class="hint-big">Drag This Image to Notion</div>
+    <div class="hint-big">Drag this image to Saved</div>
     <div class="hint-sub">Your drawing is ready to drop</div>
     <img id="finalImage" />
     
@@ -393,10 +467,17 @@
         btn.classList.add('active');
     }
 
-    function clearCanvas() {
-        if (confirm('Clear the entire board?')) {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-        }
+    function requestClear() {
+        document.getElementById('modalOverlay').style.display = 'flex';
+    }
+
+    function closeModal() {
+        document.getElementById('modalOverlay').style.display = 'none';
+    }
+
+    function performClear() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        closeModal();
     }
 
     function toggleTheme() {
