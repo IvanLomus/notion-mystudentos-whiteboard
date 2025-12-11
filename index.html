@@ -2,197 +2,384 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Notion Sketchpad</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Notion Pro Whiteboard</title>
     <style>
-        /* Стиль под Notion */
+        :root {
+            --bg-color: #ffffff;
+            --tool-bg: #ffffff;
+            --text-color: #37352f;
+            --border-color: #e0e0e0;
+            --hover-color: #f0f0f0;
+            --active-color: #e0e0e0;
+            --shadow: 0 4px 20px rgba(0,0,0,0.08);
+            --accent: #2383e2;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #191919;
+            --tool-bg: #2d2d2d;
+            --text-color: #d4d4d4;
+            --border-color: #3f3f3f;
+            --hover-color: #3f3f3f;
+            --active-color: #4a4a4a;
+            --shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
         body {
             margin: 0;
             overflow: hidden;
+            background-color: var(--bg-color);
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-            background-color: white;
             display: flex;
             flex-direction: column;
-            align-items: center;
             height: 100vh;
+            transition: background-color 0.3s ease;
+            touch-action: none; /* Блокируем зум на мобильных */
         }
 
-        /* Панель инструментов */
-        .toolbar {
-            display: flex;
-            gap: 8px;
-            padding: 8px;
-            background: #f7f7f5; /* Легкий серый фон панели */
-            border-bottom: 1px solid #e0e0e0;
-            width: 100%;
-            justify-content: center;
-            box-sizing: border-box;
-        }
-
-        button {
-            border: 1px solid transparent;
-            background: transparent;
-            padding: 6px 10px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            color: #37352f;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        button:hover { background: rgba(55, 53, 47, 0.08); }
-        button.active { background: rgba(55, 53, 47, 0.16); }
-
-        /* Кнопка SAVE - Синяя */
-        button.save-btn {
-            background: #2383e2;
-            color: white;
-            font-weight: 500;
-            margin-left: 10px;
-        }
-        button.save-btn:hover { background: #1a6fc0; }
-
-        /* Контейнеры */
+        /* --- ХОЛСТ --- */
         #canvasContainer {
             flex-grow: 1;
-            width: 100%;
             position: relative;
             cursor: crosshair;
+            width: 100%;
+            height: 100%;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
         }
 
-        #resultContainer {
-            display: none; /* Скрыт по умолчанию */
-            flex-grow: 1;
+        /* --- ПЛАВАЮЩАЯ ПАНЕЛЬ --- */
+        .toolbar-wrapper {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
             width: 100%;
+            display: flex;
+            justify-content: center;
+            pointer-events: none; /* Чтобы клики проходили сквозь пустые места */
+            z-index: 100;
+        }
+
+        .toolbar {
+            pointer-events: auto;
+            background: var(--tool-bg);
+            padding: 8px 12px;
+            border-radius: 12px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        /* Группы кнопок */
+        .group {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+            padding-right: 12px;
+            border-right: 1px solid var(--border-color);
+        }
+        .group:last-child {
+            border-right: none;
+            padding-right: 0;
+        }
+
+        /* Кнопки иконок */
+        .icon-btn {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 6px;
+            color: var(--text-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+        .icon-btn:hover { background: var(--hover-color); }
+        .icon-btn.active { background: var(--active-color); color: var(--accent); }
+        .icon-btn svg { width: 20px; height: 20px; fill: currentColor; }
+
+        /* Выбор цвета (Кружочки) */
+        .color-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: transform 0.2s;
+        }
+        .color-dot:hover { transform: scale(1.2); }
+        .color-dot.active { border-color: var(--text-color); transform: scale(1.1); }
+
+        /* Выбор толщины */
+        .size-btn {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .size-btn:hover { background: var(--hover-color); }
+        .size-btn.active { background: var(--active-color); }
+        .size-circle { background: var(--text-color); border-radius: 50%; }
+
+        /* Кнопка SAVE */
+        .save-btn {
+            background: var(--text-color);
+            color: var(--bg-color);
+            border: none;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .save-btn:hover { opacity: 0.8; }
+
+        /* Экран результата (Save Preview) */
+        #resultContainer {
+            display: none;
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: var(--bg-color);
+            z-index: 200;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            background: #fcfcfc;
+            padding: 20px;
         }
-
-        canvas { display: block; }
-
-        /* Финальная картинка */
         #finalImage {
-            max-width: 90%;
-            max-height: 80%;
-            border: 1px dashed #ccc;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            cursor: grab;
+            max-width: 80%;
+            max-height: 70%;
+            box-shadow: var(--shadow);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 20px;
         }
-
-        .instruction {
-            margin-bottom: 15px;
-            color: #787774;
+        .hint {
+            color: var(--text-color);
+            opacity: 0.6;
+            margin-bottom: 10px;
             font-size: 14px;
-            font-weight: 500;
+        }
+        .back-btn {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
 
-<div class="toolbar" id="mainToolbar">
-    <button id="brushBtn" class="active" onclick="setMode('brush')">✏️ Draw</button>
-    <button id="eraserBtn" onclick="setMode('eraser')">🧼 Erase</button>
-    <button onclick="clearCanvas()">🗑 Clear</button>
-    <button class="save-btn" onclick="saveImage()">💾 Save</button>
-</div>
-
 <div id="canvasContainer">
     <canvas id="drawingCanvas"></canvas>
 </div>
 
+<div class="toolbar-wrapper" id="mainToolbar">
+    <div class="toolbar">
+        
+        <div class="group">
+            <button class="icon-btn active" id="tool-brush" onclick="setTool('brush')" title="Brush">
+                <svg viewBox="0 0 24 24"><path d="M7 14c-1.66 0-3 1.34-3 3 0 1.31-1.16 2-2 2 .92 1.22 2.49 2 4 2 2.21 0 4-1.79 4-4 0-1.66-1.34-3-3-3zm13.71-9.37l-1.34-1.34a.996.996 0 0 0-1.41 0L9 12.25 11.75 15l8.96-8.96a.996.996 0 0 0 0-1.41z"/></svg>
+            </button>
+            <button class="icon-btn" id="tool-eraser" onclick="setTool('eraser')" title="Eraser">
+                <svg viewBox="0 0 24 24"><path d="M16.24 3.56l4.95 4.94c.78.79.78 2.05 0 2.84L12 20.53a4.008 4.008 0 0 1-5.66 0L2.81 17c-.78-.79-.78-2.05 0-2.84l10.6-10.6c.79-.78 2.05-.78 2.83 0zM4.22 15.58l3.54 3.53c.78.79 2.04.79 2.83 0l8.48-8.48-3.53-3.54-8.49 8.48a2.003 2.003 0 0 0-.01 2.84a1.996 1.996 0 0 0 1.18-.83z"/></svg>
+            </button>
+            <button class="icon-btn" onclick="toggleTheme()" title="Toggle Theme">
+                <svg id="theme-icon" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 0 1-4.4 2.26 5.403 5.403 0 0 1-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/></svg>
+            </button>
+        </div>
+
+        <div class="group">
+            <div class="color-dot active" style="background: #37352f;" onclick="setColor('#37352f', this)" data-dark-color="#d4d4d4"></div> <div class="color-dot" style="background: #e03e3e;" onclick="setColor('#e03e3e', this)"></div> <div class="color-dot" style="background: #d9730d;" onclick="setColor('#d9730d', this)"></div> <div class="color-dot" style="background: #dfab01;" onclick="setColor('#dfab01', this)"></div> <div class="color-dot" style="background: #0f7b6c;" onclick="setColor('#0f7b6c', this)"></div> <div class="color-dot" style="background: #0b6e99;" onclick="setColor('#0b6e99', this)"></div> <div class="color-dot" style="background: #6940a5;" onclick="setColor('#6940a5', this)"></div> </div>
+
+        <div class="group">
+            <div class="size-btn" onclick="setSize(2, this)"><div class="size-circle" style="width: 4px; height: 4px;"></div></div>
+            <div class="size-btn active" onclick="setSize(5, this)"><div class="size-circle" style="width: 8px; height: 8px;"></div></div>
+            <div class="size-btn" onclick="setSize(12, this)"><div class="size-circle" style="width: 12px; height: 12px;"></div></div>
+        </div>
+
+        <button class="save-btn" onclick="saveImage()">Save</button>
+    </div>
+</div>
+
 <div id="resultContainer">
-    <div class="instruction">✨ Ready! Drag this image into Notion:</div>
+    <div class="hint">Drag & Drop this image into Notion</div>
     <img id="finalImage" />
-    <button onclick="editAgain()" style="margin-top: 15px; text-decoration: underline;">← Edit again</button>
+    <button class="back-btn" onclick="editAgain()">Keep Drawing</button>
 </div>
 
 <script>
     const canvas = document.getElementById('drawingCanvas');
     const ctx = canvas.getContext('2d');
-    const canvasContainer = document.getElementById('canvasContainer');
-    const resultContainer = document.getElementById('resultContainer');
-    const finalImage = document.getElementById('finalImage');
     
     let isDrawing = false;
     let mode = 'brush';
+    let currentColor = '#37352f'; // Default color
+    let currentSize = 5;
+    let isDark = false;
 
-    // 1. Настройка размера (на весь экран)
+    // --- 1. ВЫСОКОЕ РАЗРЕШЕНИЕ (HiDPI) ---
     function resize() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight - 50; // минус высота тулбара
-        
-        // Заливаем белым (иначе фон прозрачный и при драг-н-дроп будет чернота)
-        ctx.fillStyle = "white";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-    }
-    window.addEventListener('resize', resize);
-    resize();
+        const parent = document.getElementById('canvasContainer');
+        const rect = parent.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
 
-    // 2. Рисование
-    function startPosition(e) { isDrawing = true; draw(e); }
-    function endPosition() { isDrawing = false; ctx.beginPath(); }
-    
+        // Физический размер холста умножаем на плотность пикселей
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
+
+        // Визуально сжимаем обратно CSS-ом
+        canvas.style.width = `${rect.width}px`;
+        canvas.style.height = `${rect.height}px`;
+
+        // Масштабируем контекст, чтобы рисование работало корректно
+        ctx.scale(dpr, dpr);
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        
+        // При ресайзе очищается холст, поэтому заливаем фон заново
+        fillBackground();
+    }
+
+    function fillBackground() {
+        // Заливаем фон текущим цветом темы (нужно для сохранения)
+        ctx.globalCompositeOperation = 'destination-over';
+        ctx.fillStyle = isDark ? '#191919' : '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        // Возвращаем режим рисования
+        ctx.globalCompositeOperation = 'source-over';
+    }
+
+    window.addEventListener('resize', () => {
+        // В реальном приложении при ресайзе рисунок пропадет. 
+        // Но в Embed блоке Notion ресайз случается редко.
+        resize(); 
+    });
+    // Запускаем через небольшую задержку, чтобы iframe успел встать
+    setTimeout(resize, 100);
+
+    // --- 2. РИСОВАНИЕ ---
+    function getPos(e) {
+        const rect = canvas.getBoundingClientRect();
+        const x = (e.clientX || e.touches[0].clientX) - rect.left;
+        const y = (e.clientY || e.touches[0].clientY) - rect.top;
+        return { x, y };
+    }
+
+    function startDraw(e) {
+        isDrawing = true;
+        const pos = getPos(e);
+        ctx.beginPath();
+        ctx.moveTo(pos.x, pos.y);
+    }
+
     function draw(e) {
         if (!isDrawing) return;
-        ctx.lineWidth = mode === 'brush' ? 3 : 25;
-        ctx.lineCap = 'round';
-        ctx.strokeStyle = mode === 'brush' ? '#37352f' : 'white';
+        // Предотвращаем скролл на мобильных
+        if(e.type === 'touchmove') e.preventDefault();
 
-        const x = (e.clientX || e.touches[0].clientX);
-        const y = (e.clientY || e.touches[0].clientY) - 50; // поправка на тулбар
-
-        ctx.lineTo(x, y);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(x, y);
-    }
-
-    // Слушатели событий
-    canvas.addEventListener('mousedown', startPosition);
-    canvas.addEventListener('mouseup', endPosition);
-    canvas.addEventListener('mousemove', draw);
-    
-    // Тачскрин (iPad)
-    canvas.addEventListener('touchstart', startPosition);
-    canvas.addEventListener('touchend', endPosition);
-    canvas.addEventListener('touchmove', (e) => { e.preventDefault(); draw(e); });
-
-    // Кнопки
-    function setMode(newMode) {
-        mode = newMode;
-        document.getElementById('brushBtn').classList.toggle('active', mode === 'brush');
-        document.getElementById('eraserBtn').classList.toggle('active', mode === 'eraser');
-    }
-
-    function clearCanvas() {
-        if(confirm('Clear canvas?')) {
-            ctx.fillStyle = "white";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        const pos = getPos(e);
+        
+        ctx.lineWidth = currentSize;
+        
+        if (mode === 'eraser') {
+            // Ластик рисует цветом фона
+            ctx.strokeStyle = isDark ? '#191919' : '#ffffff';
+        } else {
+            // Если сейчас выбран "Адаптивный черный/белый"
+            if (currentColor === 'adaptive') {
+                ctx.strokeStyle = isDark ? '#d4d4d4' : '#37352f';
+            } else {
+                ctx.strokeStyle = currentColor;
+            }
         }
+
+        ctx.lineTo(pos.x, pos.y);
+        ctx.stroke();
     }
 
-    // --- ГЛАВНАЯ ФИШКА: ЛОГИКА СОХРАНЕНИЯ ---
+    function stopDraw() { isDrawing = false; }
+
+    canvas.addEventListener('mousedown', startDraw);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', stopDraw);
+    canvas.addEventListener('mouseout', stopDraw);
+    
+    canvas.addEventListener('touchstart', startDraw, {passive: false});
+    canvas.addEventListener('touchmove', draw, {passive: false});
+    canvas.addEventListener('touchend', stopDraw);
+
+    // --- 3. ИНСТРУМЕНТЫ ---
+    function setTool(t) {
+        mode = t;
+        document.getElementById('tool-brush').classList.toggle('active', t === 'brush');
+        document.getElementById('tool-eraser').classList.toggle('active', t === 'eraser');
+    }
+
+    function setColor(color, btn) {
+        setTool('brush'); // Если выбрали цвет, переключаемся на кисть
+        
+        // Логика "умного цвета" (первый кружок)
+        if (color === '#37352f') {
+            currentColor = 'adaptive'; 
+        } else {
+            currentColor = color;
+        }
+
+        document.querySelectorAll('.color-dot').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    }
+
+    function setSize(s, btn) {
+        currentSize = s;
+        document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    }
+
+    // --- 4. ТЕМА И СОХРАНЕНИЕ ---
+    function toggleTheme() {
+        isDark = !isDark;
+        document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+        // Меняем иконку
+        const path = isDark 
+            ? "M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.93c.39.39.39 1.02 0 1.41-.39.39-1.02.39-1.41 0-.39-.39-.39-1.02 0-1.41.39-.39 1.02-.39 1.41 0zm12.37 12.37c.39.39.39 1.02 0 1.41-.39.39-1.02.39-1.41 0-.39-.39-.39-1.02 0-1.41.39-.39 1.02-.39 1.41 0zm1.41-13.78c.39-.39 1.02-.39 1.41 0 .39.39.39 1.02 0 1.41-.39.39-1.02.39-1.41 0-.39-.39-.39-1.02 0-1.41zm-15.54 15.54c.39-.39 1.02-.39 1.41 0 .39.39.39 1.02 0 1.41-.39.39-1.02.39-1.41 0-.39-.39-.39-1.02 0-1.41z"
+            : "M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 0 1-4.4 2.26 5.403 5.403 0 0 1-3.14-9.8c-.44-.06-.9-.1-1.36-.1z";
+        document.querySelector('#theme-icon path').setAttribute('d', path);
+        
+        fillBackground(); // Перекрашиваем фон холста
+    }
+
     function saveImage() {
-        // 1. Конвертируем холст в картинку
+        // Убеждаемся, что фон залит (иначе при сохранении будет прозрачность)
+        fillBackground();
+
         const dataURL = canvas.toDataURL("image/png");
+        document.getElementById('finalImage').src = dataURL;
         
-        // 2. Вставляем в тег IMG
-        finalImage.src = dataURL;
-        
-        // 3. Скрываем рисовалку, показываем результат
         document.getElementById('mainToolbar').style.display = 'none';
-        canvasContainer.style.display = 'none';
-        resultContainer.style.display = 'flex';
+        document.getElementById('canvasContainer').style.display = 'none';
+        document.getElementById('resultContainer').style.display = 'flex';
     }
 
     function editAgain() {
-        resultContainer.style.display = 'none';
+        document.getElementById('resultContainer').style.display = 'none';
         document.getElementById('mainToolbar').style.display = 'flex';
-        canvasContainer.style.display = 'block';
+        document.getElementById('canvasContainer').style.display = 'block';
     }
 </script>
 
