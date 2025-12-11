@@ -14,6 +14,7 @@
             --menu-active: rgba(255,255,255, 0.3);
             --accent: #4ea7fc;
             --shadow: 0 10px 40px rgba(0,0,0,0.2);
+            --danger: #ff4d4d;
         }
 
         [data-theme="dark"] {
@@ -25,6 +26,7 @@
             --menu-active: #e0e0e0;
             --accent: #2383e2;
             --shadow: 0 10px 40px rgba(0,0,0,0.6);
+            --danger: #eb5757;
         }
 
         body {
@@ -55,6 +57,7 @@
             height: 100%;
         }
 
+        /* --- TOOLBAR --- */
         .toolbar-wrapper {
             position: absolute;
             bottom: 25px;
@@ -111,6 +114,8 @@
         .icon-btn:hover { background: var(--menu-hover); }
         .icon-btn.active { background: var(--menu-active); color: var(--accent); }
         .icon-btn svg { width: 20px; height: 20px; fill: currentColor; }
+        
+        .icon-btn.danger:hover { color: var(--danger); background: var(--menu-hover); }
 
         .color-dot {
             width: 16px;
@@ -175,7 +180,7 @@
 
         #finalImage {
             max-width: 85%;
-            max-height: 65%;
+            max-height: 60%;
             box-shadow: 0 10px 40px rgba(0,0,0,0.2);
             border-radius: 12px;
             border: 2px dashed var(--accent);
@@ -204,23 +209,34 @@
             margin-bottom: 20px;
         }
 
-        @keyframes float {
-            0% { transform: translateY(0px); }
-            50% { transform: translateY(-8px); }
-            100% { transform: translateY(0px); }
+        .result-buttons {
+            display: flex;
+            gap: 12px;
         }
 
         .back-btn {
             background: transparent;
             border: 1px solid #e0e0e0;
             color: #787774;
-            padding: 8px 16px;
+            padding: 10px 20px;
             border-radius: 8px;
             cursor: pointer;
             font-weight: 500;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
         body[data-theme="dark"] .back-btn { border-color: #555; color: #aaa; }
         .back-btn:hover { border-color: var(--accent); color: var(--accent); }
+        
+        .new-btn:hover { border-color: var(--danger); color: var(--danger); }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+            100% { transform: translateY(0px); }
+        }
 
     </style>
 </head>
@@ -240,7 +256,11 @@
             <button class="icon-btn" id="tool-eraser" onclick="setTool('eraser')" title="Eraser">
                 <svg viewBox="0 0 24 24"><path d="M16.24 3.56l4.95 4.94c.78.79.78 2.05 0 2.84L12 20.53a4.008 4.008 0 0 1-5.66 0L2.81 17c-.78-.79-.78-2.05 0-2.84l10.6-10.6c.79-.78 2.05-.78 2.83 0zM4.22 15.58l3.54 3.53c.78.79 2.04.79 2.83 0l8.48-8.48-3.53-3.54-8.49 8.48a2.003 2.003 0 0 0-.01 2.84a1.996 1.996 0 0 0 1.18-.83z"/></svg>
             </button>
-            <button class="icon-btn" onclick="toggleTheme()" title="Switch Theme">
+            <button class="icon-btn danger" onclick="clearCanvas()" title="Clear All">
+                <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+            </button>
+            
+            <button class="icon-btn" onclick="toggleTheme()" title="Switch Theme" style="margin-left: 4px;">
                 <svg id="theme-icon" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 0 1-4.4 2.26 5.403 5.403 0 0 1-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/></svg>
             </button>
         </div>
@@ -267,7 +287,17 @@
     <div class="hint-big">Drag This Image to Notion</div>
     <div class="hint-sub">Your drawing is ready to drop</div>
     <img id="finalImage" />
-    <button class="back-btn" onclick="editAgain()">← Edit drawing</button>
+    
+    <div class="result-buttons">
+        <button class="back-btn" onclick="editAgain()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34a.9959.9959 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+            Keep Editing
+        </button>
+        <button class="back-btn new-btn" onclick="startNew()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+            New Canvas
+        </button>
+    </div>
 </div>
 
 <script>
@@ -363,6 +393,12 @@
         btn.classList.add('active');
     }
 
+    function clearCanvas() {
+        if (confirm('Clear the entire board?')) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+    }
+
     function toggleTheme() {
         isDark = !isDark;
         document.body.setAttribute('data-theme', isDark ? 'dark' : 'light');
@@ -406,6 +442,11 @@
         document.getElementById('resultContainer').style.display = 'none';
         document.getElementById('mainToolbar').style.display = 'flex';
         document.getElementById('canvasContainer').style.display = 'block';
+    }
+
+    function startNew() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        editAgain();
     }
 </script>
 
