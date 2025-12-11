@@ -308,7 +308,7 @@
     function startDraw(e) { isDrawing = true; draw(e); }
     function stopDraw() { isDrawing = false; ctx.beginPath(); }
     
-function draw(e) {
+    function draw(e) {
         if (!isDrawing) return;
         if(e.type === 'touchmove') e.preventDefault();
 
@@ -363,7 +363,7 @@ function draw(e) {
         btn.classList.add('active');
     }
 
-function toggleTheme() {
+    function toggleTheme() {
         isDark = !isDark;
         document.body.setAttribute('data-theme', isDark ? 'dark' : 'light');
         
@@ -381,32 +381,10 @@ function toggleTheme() {
             adaptiveDot.style.background = '#37352f'; 
             adaptiveDot.style.borderColor = 'rgba(255,255,255,0.3)';
         }
-
-        fillBackground();
     }
 
     function saveImage() {
-        
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
         ctx.globalCompositeOperation = 'destination-over';
-        ctx.fillStyle = isDark ? '#191919' : '#ffffff';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
-        const dataURL = canvas.toDataURL("image/png");
-        document.getElementById('finalImage').src = dataURL;
-        
-        ctx.globalCompositeOperation = 'source-over';
-
-        document.getElementById('mainToolbar').style.display = 'none';
-        document.getElementById('canvasContainer').style.display = 'none';
-        document.getElementById('resultContainer').style.display = 'flex';
-    }
-
-    function editAgain() {
-        document.getElementById('resultContainer').style.display = 'none';
-        document.getElementById('mainToolbar').style.display = 'flex';
-        document.getElementById('canvasContainer').style.display = 'block';
-    }
-</script>
-
-</body>
-</html>
+        ctx.fillStyle =
