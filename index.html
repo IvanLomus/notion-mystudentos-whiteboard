@@ -384,7 +384,30 @@
     }
 
     function saveImage() {
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = canvas.width;
+        tempCanvas.height = canvas.height;
+        const tCtx = tempCanvas.getContext('2d');
 
-        ctx.globalCompositeOperation = 'destination-over';
-        ctx.fillStyle =
+        tCtx.fillStyle = isDark ? '#191919' : '#ffffff';
+        tCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+
+        tCtx.drawImage(canvas, 0, 0);
+
+        const dataURL = tempCanvas.toDataURL("image/png");
+        document.getElementById('finalImage').src = dataURL;
+
+        document.getElementById('mainToolbar').style.display = 'none';
+        document.getElementById('canvasContainer').style.display = 'none';
+        document.getElementById('resultContainer').style.display = 'flex';
+    }
+
+    function editAgain() {
+        document.getElementById('resultContainer').style.display = 'none';
+        document.getElementById('mainToolbar').style.display = 'flex';
+        document.getElementById('canvasContainer').style.display = 'block';
+    }
+</script>
+
+</body>
+</html>
